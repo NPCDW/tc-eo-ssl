@@ -1,14 +1,14 @@
-# name: Build
+name: Build
 
-# on:
-#   push:
-#     tags: "*"
+on:
+  push:
+    tags: "*"
 
-# env:
-#   CARGO_TERM_COLOR: always
+env:
+  CARGO_TERM_COLOR: always
 
-# permissions:
-#   contents: write
+permissions:
+  contents: write
 
 # jobs:
 #   binaries:
