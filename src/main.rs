@@ -91,7 +91,7 @@ async fn execute() -> anyhow::Result<()> {
     }
     if args.secret_key.is_none() {
         match std::env::var("TENCENTCLOUD_SECRET_KEY") {
-            Ok(s) => args.secret_id = Some(s),
+            Ok(s) => args.secret_key = Some(s),
             Err(e) => println!("无法获取命令行参数 --secret-key 以及环境变量 TENCENTCLOUD_SECRET_KEY: {}", e),
         }
     }
@@ -103,7 +103,7 @@ async fn execute() -> anyhow::Result<()> {
     }
     if args.private_key_file_path.is_none() {
         match std::env::var("TENCENTCLOUD_PRIVATE_KEY_FILE_PATH") {
-            Ok(s) => args.secret_id = Some(s),
+            Ok(s) => args.private_key_file_path = Some(s),
             Err(e) => println!("无法获取命令行参数 --private-key-file-path 以及环境变量 TENCENTCLOUD_PRIVATE_KEY_FILE_PATH: {}", e),
         }
     }
