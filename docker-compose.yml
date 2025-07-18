@@ -1,0 +1,16 @@
+services:
+  tc-eo-ssl:
+    image: npcdw/tc-eo-ssl
+    container_name: tc-eo-ssl
+    volumes:
+      - ../acme/ssl/:/ssl/"
+    environment:
+      TZ: 'Asia/Shanghai'
+      LANG: 'C.UTF-8'
+      LC_ALL: 'C.UTF-8'
+      TENCENTCLOUD_SECRET_ID: 'your secret id'
+      TENCENTCLOUD_SECRET_KEY: 'your secret key'
+      TENCENTCLOUD_PUBLIC_KEY_FILE_PATH: '/ssl/public.key'
+      TENCENTCLOUD_PRIVATE_KEY_FILE_PATH: '/ssl/private.key'
+      TENCENTCLOUD_INSTANCE_ID_LIST: 'app.example.com,www.example.com,*.example.com'
+      TENCENTCLOUD_INTL: 'true'
