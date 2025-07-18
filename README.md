@@ -30,15 +30,15 @@ services:
       LC_ALL: 'C.UTF-8'
       TENCENTCLOUD_SECRET_ID: 'your secret id'
       TENCENTCLOUD_SECRET_KEY: 'your secret key'
-      TENCENTCLOUD_PUBLIC_KEY_FILE_PATH: '/ssl/public.key'
-      TENCENTCLOUD_PRIVATE_KEY_FILE_PATH: '/ssl/private.key'
+      TENCENTCLOUD_PUBLIC_KEY_FILE_PATH: '/ssl/example.com/example.com.pem'
+      TENCENTCLOUD_PRIVATE_KEY_FILE_PATH: '/ssl/example.com/example.com.key'
       TENCENTCLOUD_INSTANCE_ID_LIST: 'app.example.com,www.example.com,*.example.com'
       TENCENTCLOUD_INTL: 'true'
 ```
-然后执行 `docker compose up -d` 即可，使用 `docker compose logs -f` 查看日志，程序执行成功自动退出，请到腾讯云控制台确认证书被正确上传以及部署。
+然后执行 `docker compose up` 启动并查看日志，程序执行成功自动退出，请到腾讯云控制台确认证书被正确上传以及部署，证书上传成功会立即在证书控制台看见，但部署是异步任务，需要等待几分钟才会开始。
 
 如果一切无误，下次上传部署证书时只需要执行 `docker restart tc-eo-ssl` 即可。
 推荐配合 `acme.sh` 使用，修改安装证书后重载命令
 ```bash
-acme.sh --install-cert -d DOMAIN --key-file private.key --fullchain-file public.pem --reloadcmd "docker restart tc-eo-ssl"
+acme.sh --install-cert -d DOMAIN --key-file example.com.key --fullchain-file example.com.pem --reloadcmd "docker restart tc-eo-ssl"
 ```
