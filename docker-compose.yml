@@ -14,3 +14,7 @@ services:
       TENCENTCLOUD_PRIVATE_KEY_FILE_PATH: '/ssl/private.key'
       TENCENTCLOUD_INSTANCE_ID_LIST: 'app.example.com,www.example.com,*.example.com'
       TENCENTCLOUD_INTL: 'true'
+      # 以下参数可选
+      TELEGRAM_BOT_TOKEN: 'your telegram bot token'
+      TELEGRAM_CHAT_ID: 'your telegram chat id'
+      TELEGRAM_TOPIC_ID: 'your telegram topic id'
