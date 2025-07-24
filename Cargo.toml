@@ -1,6 +1,6 @@
 [package]
 name = "tc-eo-ssl"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 
 [dependencies]
@@ -8,7 +8,7 @@ chrono = "0.4.41"
 hmac = "0.12.1"
 sha2 = "0.10.9"
 reqwest = { version = "0.12.22", features = ["json"] }
-serde_json = "1.0.140"
+serde_json = "1.0.141"
 tokio = { version = "1.46.1", features = ["full"] }
 hex = "0.4.3"
 serde = { version = "1.0.219", features = ["derive"] }

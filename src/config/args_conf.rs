@@ -22,4 +22,14 @@ pub struct Args {
     /// 是否使用国际站, 环境变量 TENCENTCLOUD_INTL true国际站，false国内站，默认国内站
     #[arg(long)]
     pub intl: Option<bool>,
+    
+    /// TG bot token, 环境变量 TELEGRAM_BOT_TOKEN
+    #[arg(long)]
+    pub tg_bot_token: Option<String>,
+    /// TG 聊天ID, 环境变量 TELEGRAM_CHAT_ID
+    #[arg(long)]
+    pub tg_chat_id: Option<i64>,
+    /// TG 聊天主题ID，默认0, 环境变量 TELEGRAM_TOPIC_ID
+    #[arg(long)]
+    pub tg_topic_id: Option<i64>,
 }

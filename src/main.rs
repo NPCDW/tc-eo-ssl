@@ -21,6 +21,13 @@ pub struct DeployCertificateData {
     pub deploy_status: i32,
 }
 
+// 修改是否忽略证书到期通知成功响应数据结构
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ModifyCertificateNotificationData {
+    #[serde(rename = "CertificateIds")]
+    pub certificate_ids: String,
+}
+
 // 上传证书
 pub async fn upload_certificate(
     secret_id: String,
@@ -81,6 +88,34 @@ pub async fn deploy_certificate(
     request.send().await
 }
 
+// 修改是否忽略证书到期通知
+pub async fn modify_certificate_notification(
+    secret_id: String,
+    secret_key: String,
+    certificate_id: String,
+    host: String,
+) -> anyhow::Result<String> {
+    let payload = serde_json::json!({
+        "CertificateIds": [certificate_id],
+        "SwitchStatus": 1
+    })
+    .to_string();
+
+    let request = TencentCloudRequest::new(
+        secret_id.to_string(),
+        secret_key.to_string(),
+        "ssl".to_string(),
+        host,
+        "".to_string(),
+        "ModifyCertificatesExpiringNotificationSwitch".to_string(),
+        "2019-12-05".to_string(),
+        payload,
+        "".to_string(),
+    );
+
+    request.send().await
+}
+
 async fn execute() -> anyhow::Result<()> {
     let mut args = config::args_conf::Args::parse();
     if args.secret_id.is_none() {
@@ -119,6 +154,24 @@ async fn execute() -> anyhow::Result<()> {
             Err(_) => args.intl = Some(false),
         }
     }
+    if args.tg_bot_token.is_none() {
+        match std::env::var("TELEGRAM_BOT_TOKEN") {
+            Ok(s) => args.tg_bot_token = Some(s),
+            Err(_) => (),
+        }
+    }
+    if args.tg_chat_id.is_none() {
+        match std::env::var("TELEGRAM_CHAT_ID") {
+            Ok(s) => args.tg_chat_id = Some(s.parse::<i64>()?),
+            Err(_) => (),
+        }
+    }
+    if args.tg_topic_id.is_none() {
+        match std::env::var("TELEGRAM_TOPIC_ID") {
+            Ok(s) => args.tg_topic_id = Some(s.parse::<i64>()?),
+            Err(_) => (),
+        }
+    }
     
     let certificate_public_key = std::fs::read_to_string(args.public_key_file_path.as_ref().unwrap())?;
     let certificate_private_key = std::fs::read_to_string(args.private_key_file_path.as_ref().unwrap())?;
@@ -146,13 +199,13 @@ async fn execute() -> anyhow::Result<()> {
     println!("证书上传成功，CertificateId: {}", certificate_id);
 
     // 2. 部署证书
-    println!("正在部署证书 certificate_id 到 {:?}...", args.instance_id_list);
+    println!("正在部署证书 {} 到 {:?}...", certificate_id, args.instance_id_list);
     let deploy_param = deploy_certificate(
         secret_id.to_string(),
         secret_key.to_string(),
         certificate_id.to_string(),
         instance_id_list.to_vec(),
-        host,
+        host.clone(),
     ).await?;
     let deploy_response = serde_json::from_str::<TencentCloudResponse<DeployCertificateData>>(&deploy_param)?;
     if deploy_response.response.error.is_some() {
@@ -161,6 +214,25 @@ async fn execute() -> anyhow::Result<()> {
     }
     let deploy_record_id = deploy_response.response.data.unwrap().deploy_record_id;
     println!("证书部署成功，DeployRecordId: {}", deploy_record_id);
+
+    // 3. 忽略证书到期通知
+    println!("忽略证书到期通知 {}...", certificate_id);
+    let deploy_param = modify_certificate_notification(
+        secret_id.to_string(),
+        secret_key.to_string(),
+        certificate_id.to_string(),
+        host,
+    ).await?;
+    let modify_notification_response = serde_json::from_str::<TencentCloudResponse<ModifyCertificateNotificationData>>(&deploy_param)?;
+    if modify_notification_response.response.error.is_some() {
+        println!("忽略证书到期通知失败");
+        return Err(anyhow::anyhow!(modify_notification_response.response.error.unwrap().to_string()));
+    }
+    let certificate_ids = modify_notification_response.response.data.unwrap().certificate_ids;
+    println!("忽略证书到期通知成功，CertificateIds: {}", certificate_ids);
+
+    // 4. 发送TG通知
+    service::tg_notify::send_msg(&args, format!("证书 `{}` 部署到 `{:?}` 成功", certificate_id, args.instance_id_list)).await;
 
     anyhow::Ok(())
 }
