@@ -9,7 +9,7 @@
 ![alt text](doc/image4.png)
 创建完成记住子用户的 SecretId 和 SecretKey
 
-第二步，先在腾讯云控制台创建一个用户策略，并授权给子用户 [https://console.tencentcloud.com/cam/policy](https://console.tencentcloud.com/cam/policy)
+第二步，先在腾讯云控制台创建一个用户策略，需要三个API接口 `UploadCertificate` `DeployCertificateInstance` `ModifyCertificatesExpiringNotificationSwitch`，并授权给子用户 [https://console.tencentcloud.com/cam/policy](https://console.tencentcloud.com/cam/policy)
 ![alt text](doc/image.png)
 ![alt text](doc/image2.png)
 ![alt text](doc/image3.png)

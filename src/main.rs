@@ -24,7 +24,7 @@ pub struct DeployCertificateData {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModifyCertificateNotificationData {
     #[serde(rename = "CertificateIds")]
-    pub certificate_ids: String,
+    pub certificate_ids: Vec<String>,
 }
 
 // 上传证书
@@ -172,7 +172,7 @@ async fn deploy(args: &config::args_conf::Args) -> anyhow::Result<()> {
         return Err(anyhow::anyhow!(modify_notification_response.response.error.unwrap().to_string()));
     }
     let certificate_ids = modify_notification_response.response.data.unwrap().certificate_ids;
-    println!("忽略证书到期通知成功，CertificateIds: {}", certificate_ids);
+    println!("忽略证书到期通知成功，CertificateIds: {:?}", certificate_ids);
 
     anyhow::Ok(())
 }
@@ -232,6 +232,22 @@ mod tests {
         println!("{:?}", result);
         assert!(result.is_ok());
         let response = serde_json::from_str::<TencentCloudResponse<DeployCertificateData>>(&result.unwrap());
+        assert!(response.is_ok());
+        let response = response.unwrap();
+        assert!(response.response.error.is_none());
+    }
+    
+    #[tokio::test]
+    async fn test_modify_certificate_notification() {
+        let secret_id = std::env::var("TENCENTCLOUD_SECRET_ID").unwrap();
+        let secret_key = std::env::var("TENCENTCLOUD_SECRET_KEY").unwrap();
+        let certificate_id = "test_cert_id";
+        let host = "ssl.intl.tencentcloudapi.com";
+
+        let result = modify_certificate_notification(secret_id, secret_key, certificate_id.to_string(), host.to_string()).await;
+        println!("{:?}", result);
+        assert!(result.is_ok());
+        let response = serde_json::from_str::<TencentCloudResponse<ModifyCertificateNotificationData>>(&result.unwrap());
         assert!(response.is_ok());
         let response = response.unwrap();
         assert!(response.response.error.is_none());
