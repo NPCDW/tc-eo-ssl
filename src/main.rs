@@ -1,4 +1,3 @@
-use clap::Parser;
 use serde::{Deserialize, Serialize};
 use service::tc_request::{TencentCloudRequest, TencentCloudResponse};
 
@@ -116,63 +115,7 @@ pub async fn modify_certificate_notification(
     request.send().await
 }
 
-async fn execute() -> anyhow::Result<()> {
-    let mut args = config::args_conf::Args::parse();
-    if args.secret_id.is_none() {
-        match std::env::var("TENCENTCLOUD_SECRET_ID") {
-            Ok(s) => args.secret_id = Some(s),
-            Err(e) => println!("无法获取命令行参数 --secret-id 以及环境变量 TENCENTCLOUD_SECRET_ID: {}", e),
-        }
-    }
-    if args.secret_key.is_none() {
-        match std::env::var("TENCENTCLOUD_SECRET_KEY") {
-            Ok(s) => args.secret_key = Some(s),
-            Err(e) => println!("无法获取命令行参数 --secret-key 以及环境变量 TENCENTCLOUD_SECRET_KEY: {}", e),
-        }
-    }
-    if args.public_key_file_path.is_none() {
-        match std::env::var("TENCENTCLOUD_PUBLIC_KEY_FILE_PATH") {
-            Ok(s) => args.public_key_file_path = Some(s),
-            Err(e) => println!("无法获取命令行参数 --public-key-file-path 以及环境变量 TENCENTCLOUD_PUBLIC_KEY_FILE_PATH: {}", e),
-        }
-    }
-    if args.private_key_file_path.is_none() {
-        match std::env::var("TENCENTCLOUD_PRIVATE_KEY_FILE_PATH") {
-            Ok(s) => args.private_key_file_path = Some(s),
-            Err(e) => println!("无法获取命令行参数 --private-key-file-path 以及环境变量 TENCENTCLOUD_PRIVATE_KEY_FILE_PATH: {}", e),
-        }
-    }
-    if args.instance_id_list.is_none() {
-        match std::env::var("TENCENTCLOUD_INSTANCE_ID_LIST") {
-            Ok(s) => args.instance_id_list = Some(s.split(",").map(|item| item.trim().to_string()).collect()),
-            Err(e) => println!("无法获取命令行参数 --instance-id-list 以及环境变量 TENCENTCLOUD_INSTANCE_ID_LIST: {}", e),
-        }
-    }
-    if args.intl.is_none() {
-        match std::env::var("TENCENTCLOUD_INTL") {
-            Ok(s) => args.intl = Some(&s.to_lowercase() == "true"),
-            Err(_) => args.intl = Some(false),
-        }
-    }
-    if args.tg_bot_token.is_none() {
-        match std::env::var("TELEGRAM_BOT_TOKEN") {
-            Ok(s) => args.tg_bot_token = Some(s),
-            Err(_) => (),
-        }
-    }
-    if args.tg_chat_id.is_none() {
-        match std::env::var("TELEGRAM_CHAT_ID") {
-            Ok(s) => args.tg_chat_id = Some(s.parse::<i64>()?),
-            Err(_) => (),
-        }
-    }
-    if args.tg_topic_id.is_none() {
-        match std::env::var("TELEGRAM_TOPIC_ID") {
-            Ok(s) => args.tg_topic_id = Some(s.parse::<i64>()?),
-            Err(_) => (),
-        }
-    }
-    
+async fn deploy(args: &config::args_conf::Args) -> anyhow::Result<()> {
     let certificate_public_key = std::fs::read_to_string(args.public_key_file_path.as_ref().unwrap())?;
     let certificate_private_key = std::fs::read_to_string(args.private_key_file_path.as_ref().unwrap())?;
     let secret_id = args.secret_id.as_ref().unwrap();
@@ -231,18 +174,26 @@ async fn execute() -> anyhow::Result<()> {
     let certificate_ids = modify_notification_response.response.data.unwrap().certificate_ids;
     println!("忽略证书到期通知成功，CertificateIds: {}", certificate_ids);
 
-    // 4. 发送TG通知
-    service::tg_notify::send_msg(&args, format!("证书 `{}` 部署到 `{:?}` 成功", certificate_id, args.instance_id_list)).await;
-
     anyhow::Ok(())
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    match execute().await {
-        Ok(_) => Ok(()),
+    let args = match config::args_conf::parse() {
+        Ok(args) => args,
         Err(e) => {
-            println!("执行失败: {}", e);
+            println!("参数解析失败: {}", e);
+            return Err(e);
+        }
+    };
+    match deploy(&args).await {
+        Ok(_) => {
+            service::tg_notify::send_msg(&args, format!("✅证书部署到 `{:?}` 成功", args.instance_id_list)).await;
+            Ok(())
+        },
+        Err(e) => {
+            println!("部署失败: {}", e);
+            service::tg_notify::send_msg(&args, format!("❌证书部署到 `{:?}` 失败，错误信息: {}", args.instance_id_list, e)).await;
             Err(e)
         },
     }
